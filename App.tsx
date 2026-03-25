@@ -73,10 +73,8 @@ const App: React.FC = () => {
         // Only sign out if there's an existing session to prevent interference with fresh logins
         if (auth.currentUser) {
           await auth.signOut();
-          console.log('Cleared existing session on app startup');
         }
       } catch (error) {
-        console.log('No existing session to clear on startup');
       }
       setCurrentUser(null);
     };
@@ -117,7 +115,6 @@ const App: React.FC = () => {
     const unsubscribe = observeUser(async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          console.log('Auth state: User authenticated');
           const docRef = doc(db, 'users', firebaseUser.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -136,12 +133,10 @@ const App: React.FC = () => {
             setCurrentUser(defaultUser);
           }
         } else {
-          console.log('Auth state: No user authenticated');
           setCurrentUser(null);
           // Ensure we're on login page when no user
           const currentPath = window.location.pathname;
           if (currentPath !== '/') {
-            console.log('Auth state changed: No user, redirecting to login');
             navigate('/', { replace: true });
           }
         }
@@ -168,7 +163,6 @@ const App: React.FC = () => {
       if (currentUser) {
         // Auto logout after 30 minutes of inactivity
         timeoutId = setTimeout(async () => {
-          console.log('Session timeout - logging out user');
           await handleLogout();
         }, 30 * 60 * 1000); // 30 minutes
       }
@@ -203,7 +197,6 @@ const App: React.FC = () => {
 
     // If user is not authenticated and trying to access protected routes
     if (!currentUser && !loading && currentPath !== '/') {
-      console.log('Direct route access blocked: Not authenticated, redirecting to login');
       navigate('/', { replace: true });
     }
   }, [currentUser, loading, navigate]);
@@ -216,7 +209,6 @@ const App: React.FC = () => {
           // Verify user is still authenticated
           const user = auth.currentUser;
           if (!user) {
-            console.log('Focus check: User no longer authenticated, logging out');
             setCurrentUser(null);
             navigate('/', { replace: true });
           }
@@ -238,7 +230,6 @@ const App: React.FC = () => {
       event.preventDefault();
 
       if (!currentUser) {
-        console.log('Navigation blocked: No authenticated user');
         navigate('/', { replace: true });
         return;
       }
@@ -247,12 +238,10 @@ const App: React.FC = () => {
 
       // Check if user has access to the target path
       if (targetPath.startsWith('/admin') && currentUser.role !== 'admin') {
-        console.log('Navigation blocked: Non-admin accessing admin route');
         navigate('/dashboard', { replace: true });
         return;
       }
 
-      console.log('Navigation allowed to:', targetPath);
     };
 
     // Add beforeunload protection
@@ -278,7 +267,6 @@ const App: React.FC = () => {
     try {
       setLoading(true);
       const userCredential = await loginWithEmployeeID(employeeID, phone);
-      console.log('Authenticated user:', userCredential.user);
       const docRef = doc(db, 'users', userCredential.user.uid);
       const docSnap = await getDoc(docRef);
       let role: string;
@@ -383,7 +371,6 @@ const App: React.FC = () => {
       newPassword: passwords.newPassword.toUpperCase(),
       confirmPassword: passwords.confirmPassword.toUpperCase()
     };
-    console.log('Password change requested');
   };
 
   const handleUpdateBillStatus = async (billId: string, status: 'pending' | 'packed' | 'delivered' | 'inprogress' | 'bill_sent') => {

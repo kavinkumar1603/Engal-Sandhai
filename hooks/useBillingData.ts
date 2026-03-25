@@ -62,13 +62,11 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
     if (selectedDate) {
       // Subscribe to orders for specific date
       unsubscribeOrders = subscribeToDateOrders(selectedDate, (incomingBills) => {
-        console.log('🔥 subscribeToDateOrders callback - received bills:', incomingBills.length);
         setBills(incomingBills);
       });
     } else {
       // Subscribe to today's orders (default behavior)
       unsubscribeOrders = subscribeToTodayOrders((incomingBills) => {
-        console.log('🔥 subscribeToTodayOrders callback - received bills:', incomingBills.length);
         setBills(incomingBills);
       });
     }
@@ -153,8 +151,6 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
   }, [selectedDate]);
 
   const addBill = useCallback(async (newBillData: Omit<Bill, 'id' | 'date'>): Promise<Bill> => {
-    console.log('🔥 addBill called with data:', newBillData);
-    console.log('🔥 Current bills count before:', bills.length);
     
     try {
       // Calculate bag cost and cart subtotal
@@ -185,13 +181,10 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
         department: currentUser?.department || undefined
       };
       
-      console.log('Placing order with data:', orderData);
       
       // Place order in database using the proper service
       const billNumber = await placeOrder(orderData);
       
-      console.log('✅ Order placed successfully with bill number:', billNumber);
-      console.log('🔥 Current bills count after order placed:', bills.length);
       
       // Return a minimal Bill object for the CreateBill component
       // The real-time subscription will handle updating the actual bills list
@@ -202,7 +195,6 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
         status: 'pending'
       };
       
-      console.log('🔥 Returning bill object:', newBill);
       return newBill;
       
     } catch (error) {
@@ -213,7 +205,6 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
 
   const updateBill = useCallback(async (billId: string, updates: Partial<Bill>) => {
     try {
-      console.log(`🔄 Updating bill ${billId} via hook:`, updates);
       
       // Find the bill to get its date for the correct collection path
       const targetBill = bills.find(bill => bill.id === billId);
@@ -222,7 +213,6 @@ export const useBillingData = (props: UseBillingDataProps = {}) => {
       // Use the updateBill function from dbService for consistency
       await updateBillInDb(billId, updates, targetDate);
       
-      console.log(`✅ Bill ${billId} updated successfully via hook`);
 
       // Note: We don't update local state here because the real-time subscriptions 
       // will automatically update the bills state when the database changes

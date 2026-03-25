@@ -43,6 +43,5 @@ export const usePageTracking = () => {
             page_title: pageTitle,
         });
 
-        console.log(`Analytics: Page view tracked - ${pageTitle} (${pagePath})`);
     }, [location]);
 };
