@@ -41,9 +41,9 @@ type ExtendedBill = Bill & { employee_name?: string };
 // UPI ID configuration (single fixed ID)
 const UPI_IDS = [
   {
-    id: 'bakkiyalakshmi.ramaswamy-2@okhdfcbank',
-    name: 'Bakkiyalakshmi Ramaswamy',
-    displayName: 'bakkiyalakshmi.ramaswamy-2@okhdfcbank'
+    id: 'paytm.s1xteyq@pty',
+    name: 'R Bakialakshmi',
+    displayName: 'paytm.s1xteyq@pty'
   }
 ];
 

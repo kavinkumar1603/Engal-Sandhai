@@ -11,7 +11,7 @@ interface PaymentPageProps {
 }
 
 // UPI payment link with fixed payee ID; amount substituted at runtime
-const UPI_PAYMENT_LINK = `upi://pay?pa=bakkiyalakshmi.ramaswamy-2@okhdfcbank&pn=Engal%20Santhai&am=${'TOTAL'}&cu=INR`;
+const UPI_PAYMENT_LINK = `upi://pay?pa=paytm.s1xteyq@pty&pn=Engal%20Santhai&am=${'TOTAL'}&cu=INR`;
 
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ total, onConfirmOrder, onBack }) => {
