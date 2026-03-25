@@ -39,7 +39,6 @@ async function getVegetablesForDate(dateKey: string): Promise<Map<string, Vegeta
       });
     });
     
-    console.log(`📦 Loaded ${vegetableMap.size} vegetables for ${dateKey}`);
   } catch (error) {
     console.error(`Error loading vegetables for ${dateKey}:`, error);
   }
@@ -88,7 +87,6 @@ export async function recalculateBillsForDate(
   const results: RecalculationResult[] = [];
   const dateKey = getDateKey(targetDate);
   
-  console.log(`🔄 Starting bulk recalculation for ${dateKey}...`);
   
   try {
     // Load vegetables for this date
@@ -103,7 +101,6 @@ export async function recalculateBillsForDate(
     const billsRef = collection(db, 'orders', dateKey, 'items');
     const billsSnapshot = await getDocs(billsRef);
     
-    console.log(`📊 Found ${billsSnapshot.size} bills for ${dateKey}`);
     
     // Process each bill
     for (const billDoc of billsSnapshot.docs) {
@@ -112,7 +109,6 @@ export async function recalculateBillsForDate(
       
       try {
         if (!billData.items || billData.items.length === 0) {
-          console.log(`⏭️ Skipping bill ${billId} - no items`);
           continue;
         }
         
@@ -140,7 +136,6 @@ export async function recalculateBillsForDate(
             updated: true,
           });
           
-          console.log(`✅ Updated ${billId}: ₹${oldTotal} → ₹${newTotal}`);
         } else {
           results.push({
             billId,
@@ -149,7 +144,6 @@ export async function recalculateBillsForDate(
             updated: false,
           });
           
-          console.log(`✓ ${billId}: Already correct (₹${oldTotal})`);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -170,11 +164,6 @@ export async function recalculateBillsForDate(
     const errorCount = results.filter(r => r.error).length;
     const totalDifference = results.reduce((sum, r) => sum + (r.newTotal - r.oldTotal), 0);
     
-    console.log(`\n📈 Recalculation Summary for ${dateKey}:`);
-    console.log(`   Total bills: ${results.length}`);
-    console.log(`   Updated: ${updatedCount}`);
-    console.log(`   Errors: ${errorCount}`);
-    console.log(`   Total revenue change: ₹${totalDifference.toFixed(2)}`);
     
   } catch (error) {
     console.error(`❌ Fatal error during bulk recalculation:`, error);
@@ -223,12 +212,6 @@ export async function recalculateBillsForDateRange(
     totalRevChange += results.reduce((sum, r) => sum + (r.newTotal - r.oldTotal), 0);
   });
   
-  console.log(`\n\n🎯 OVERALL SUMMARY:`);
-  console.log(`   Dates processed: ${resultsByDate.size}`);
-  console.log(`   Total bills: ${totalBills}`);
-  console.log(`   Updated: ${totalUpdated}`);
-  console.log(`   Errors: ${totalErrors}`);
-  console.log(`   Total revenue change: ₹${totalRevChange.toFixed(2)}`);
   
   return resultsByDate;
 }

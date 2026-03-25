@@ -17,17 +17,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const location = useLocation();
 
-  console.log('ProtectedRoute render:', { 
-    hasUser: !!user, 
-    loading, 
-    requiredRole, 
-    userRole: user?.role,
-    currentPath: location.pathname 
-  });
 
   // Show loading spinner while authentication is being checked
   if (loading) {
-    console.log('ProtectedRoute: Still loading, showing spinner');
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
@@ -40,13 +32,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirect to login if no user is authenticated
   if (!user) {
-    console.log('ProtectedRoute: No user authenticated, redirecting to login');
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   // Check role-based access
   if (requiredRole && user.role !== requiredRole) {
-    console.log(`ProtectedRoute: User role '${user.role}' does not match required role '${requiredRole}'`);
     
     // Redirect based on user's actual role
     if (user.role === 'admin') {
@@ -57,7 +47,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Log successful access
-  console.log(`ProtectedRoute: Access granted for user ${user.id} with role ${user.role}`);
   
   return <>{children}</>;
 };

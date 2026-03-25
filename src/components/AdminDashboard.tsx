@@ -59,7 +59,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
       };
       
       props.onUpdateUser(updatedUser);
-      console.log('Profile updated successfully:', profile);
     } catch (error) {
       console.error('Error updating profile:', error);
       // You can add toast notification here for error handling
@@ -75,7 +74,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     };
     
     // Handle password change logic here
-    console.log('Password change requested');
     // You can add API calls or validation here with uppercasePasswords
   };
 

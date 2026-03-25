@@ -96,7 +96,6 @@ const UserOrders: React.FC<UserOrdersProps> = ({ user, onLogout, targetUserId })
       setError('');
       
       const date = new Date(selectedDate);
-      console.log(`🔄 Loading orders for ${subjectUserId} on ${date.toDateString()}`);
       
       const fetchedOrders = await fetchUserOrdersByDate(subjectUserId, date);
 
@@ -117,7 +116,6 @@ const UserOrders: React.FC<UserOrdersProps> = ({ user, onLogout, targetUserId })
           const dbDept = userData.department || userData.dept || userData.departmentName;
           if (dbDept) correctDept = dbDept;
           
-          console.log(`👤 Fetched user details: Name=${correctName}, Dept=${correctDept}`);
           setSubjectName(correctName || subjectName);
           setSubjectDept(correctDept || subjectDept);
         }
@@ -143,7 +141,6 @@ const UserOrders: React.FC<UserOrdersProps> = ({ user, onLogout, targetUserId })
       
       setOrders(enrichedOrders);
       
-      console.log(`✅ Loaded ${enrichedOrders.length} orders`);
     } catch (err) {
       console.error('❌ Error loading orders:', err);
       setError('Failed to load orders. Please try again later.');

@@ -20,7 +20,6 @@ import { AvailableStock } from '../types/firestore';
  */
 export const upsertAvailableStock = async (stockData: Omit<AvailableStock, 'lastUpdated'> & { updatedBy?: string }) => {
   try {
-    console.log('Upserting available stock for:', stockData.productId);
     const availableStockRef = doc(db, 'availableStock', stockData.productId);
     const stockDoc = await getDoc(availableStockRef);
 
@@ -32,7 +31,6 @@ export const upsertAvailableStock = async (stockData: Omit<AvailableStock, 'last
 
     if (stockDoc.exists()) {
       // Update existing entry
-      console.log('Updating existing available stock entry');
       await updateDoc(availableStockRef, {
         ...availableStockData,
         lastUpdated: availableStockData.lastUpdated,
@@ -40,11 +38,9 @@ export const upsertAvailableStock = async (stockData: Omit<AvailableStock, 'last
       });
     } else {
       // Create new entry
-      console.log('Creating new available stock entry');
       await setDoc(availableStockRef, availableStockData);
     }
 
-    console.log('Available stock upserted successfully:', stockData.productId);
     return availableStockData;
   } catch (error) {
     console.error('Error upserting available stock:', error);
@@ -58,7 +54,6 @@ export const upsertAvailableStock = async (stockData: Omit<AvailableStock, 'last
  */
 export const reduceAvailableStock = async (productId: string, quantitySold: number, updatedBy: string = 'system') => {
   try {
-    console.log(`Reducing available stock for ${productId} by ${quantitySold}`);
     const availableStockRef = doc(db, 'availableStock', productId);
     const stockDoc = await getDoc(availableStockRef);
 
@@ -70,7 +65,6 @@ export const reduceAvailableStock = async (productId: string, quantitySold: numb
         updatedBy: updatedBy
       });
 
-      console.log(`Successfully reduced available stock for ${productId}`);
       // Return -1 or approximate since we used increment and didn't read back
       return Math.max(0, currentData.availableStockKg - quantitySold);
     } else {
@@ -136,14 +130,12 @@ export const updateAvailableStockFromInventory = async (
  */
 export const deleteAvailableStock = async (productId: string) => {
   try {
-    console.log(`Deleting available stock for product ${productId}`);
     const availableStockRef = doc(db, 'availableStock', productId);
 
     // Check if document exists before trying to delete
     const stockDoc = await getDoc(availableStockRef);
     if (stockDoc.exists()) {
       await deleteDoc(availableStockRef);
-      console.log(`Available stock deleted for product ${productId}`);
     } else {
       console.warn(`Available stock not found for product ${productId}, nothing to delete`);
     }
@@ -202,16 +194,12 @@ export const batchUpdateAvailableStock = async (
   updatedBy: string = 'system'
 ) => {
   try {
-    console.log(`Starting batch update for ${updates.length} products:`, updates);
 
     const promises = updates.map(async (update) => {
-      console.log(`Processing update for ${update.productId}: ${update.quantitySold} units`);
       return await reduceAvailableStock(update.productId, update.quantitySold, updatedBy);
     });
 
     const results = await Promise.all(promises);
-    console.log(`Batch update completed successfully for ${updates.length} products`);
-    console.log('Results:', results);
 
     return results;
   } catch (error) {
@@ -278,7 +266,6 @@ export const syncAvailableStockWithVegetables = async (vegetable: any, action: '
         } catch (error) {
           // If available stock doesn't exist, that's okay for deletion
           if (error.message && error.message.includes('not found')) {
-            console.log(`Available stock entry not found for ${vegetable.id}, skipping deletion`);
           } else {
             throw error;
           }

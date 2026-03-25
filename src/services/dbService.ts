@@ -82,10 +82,8 @@ export const addVegetableToDb = async (
   const vegetablesCol = getVegetablesCol(date);
 
   // Check for duplicate vegetable name in the same date collection
-  console.log(`Checking for duplicate vegetable: "${vegetable.name}" in collection: ${vegetablesCol.path}`);
   const q = query(vegetablesCol, where('name', '==', vegetable.name));
   const querySnapshot = await getDocs(q);
-  console.log(`Duplicate check result: ${querySnapshot.size} documents found.`);
 
   if (!querySnapshot.empty) {
     console.warn(`Duplicate found: ${vegetable.name}`);
@@ -119,7 +117,6 @@ export const addVegetableToDb = async (
       updatedBy: 'system',
       dateKey: dateKey
     });
-    console.log(`✅ Available stock entry created for: ${vegetable.name} on ${dateKey}`);
   } catch (error) {
     console.error('❌ Failed to create available stock entry:', error);
   }
@@ -157,21 +154,17 @@ export const updateVegetableInDb = async (vegetable: Vegetable, date?: Date, isA
       const stockDoc = await transaction.get(availableStockRef);
       let newAvailable = vegetable.totalStockKg;
 
-      console.log('[updateVegetableInDb] Transaction for:', vegetable.name, '| totalStockKg:', vegetable.totalStockKg, '| isAddMode:', isAddMode);
 
       if (stockDoc.exists()) {
         const currentData = stockDoc.data();
-        console.log('[updateVegetableInDb] Current DB data - totalStockKg:', currentData.totalStockKg, '| availableStockKg:', currentData.availableStockKg);
         
         if (isAddMode) {
           // ADD mode: Calculate the difference and add to available stock
           const diff = vegetable.totalStockKg - (currentData.totalStockKg || 0);
           newAvailable = Math.max(0, (currentData.availableStockKg || 0) + diff);
-          console.log('[updateVegetableInDb] ADD mode - diff:', diff, '| newAvailable:', newAvailable);
         } else {
           // SET mode: Set both totalStock and availableStock to the new value
           newAvailable = vegetable.totalStockKg;
-          console.log('[updateVegetableInDb] SET mode - newAvailable:', newAvailable);
         }
       }
 
@@ -195,7 +188,6 @@ export const updateVegetableInDb = async (vegetable: Vegetable, date?: Date, isA
     });
     const target = isDateBased ? `${vegetable.name} on ${dateKey}` : vegetable.name;
     const mode = isAddMode ? 'ADD' : 'SET';
-    console.log(`✅ Available stock updated for: ${target} (Mode: ${mode})`);
   } catch (error) {
     console.error('❌ Failed to update available stock:', error);
   }
@@ -220,7 +212,6 @@ export const deleteVegetableFromDb = async (vegId: string, date?: Date): Promise
 
     await deleteDoc(availableStockRef);
     const target = isDateBased ? `vegetable on ${dateKey}` : 'vegetable';
-    console.log('✅ Available stock deleted for', target, ':', vegId);
   } catch (error) {
     console.error('❌ Failed to delete available stock:', error);
   }
@@ -246,7 +237,6 @@ export const reduceVegetableStock = async (vegetableId: string, quantityToReduce
     const currentVegetable = docSnap.data() as Vegetable;
     const newStockKg = Math.max(0, round(currentVegetable.stockKg - quantityToReduce));
 
-    console.log(`Reducing stock for ${currentVegetable.name}: ${currentVegetable.stockKg} - ${quantityToReduce} = ${newStockKg}`);
 
     // Update vegetables collection
     await updateDoc(ref, {
@@ -267,7 +257,6 @@ export const reduceVegetableStock = async (vegetableId: string, quantityToReduce
       });
 
       const target = isDateBased ? `${currentVegetable.name} on ${dateKey}` : currentVegetable.name;
-      console.log('✅ Stock reduced successfully for:', target, `(${quantityToReduce} units)`);
     } catch (error) {
       console.error('❌ Failed to update available stock during reduction:', error);
     }
@@ -283,7 +272,6 @@ export const batchReduceVegetableStock = async (
   items: Array<{ vegetableId: string; quantityToReduce: number }>,
   date?: Date
 ): Promise<void> => {
-  console.log(`Starting batch stock reduction for ${items.length} items`);
 
   try {
     // Process all stock reductions
@@ -292,7 +280,6 @@ export const batchReduceVegetableStock = async (
     );
 
     await Promise.all(promises);
-    console.log('✅ Batch stock reduction completed successfully');
   } catch (error) {
     console.error('❌ Error in batch stock reduction:', error);
     throw error;
@@ -347,7 +334,6 @@ let isProcessingOrder = false;
 export const getOrderProcessingStatus = () => isProcessingOrder;
 
 export const placeOrder = async (orderData: OrderData): Promise<string> => {
-  console.log('Order placement requested, adding to queue...');
 
   // Add this order to the processing queue to prevent race conditions
   return new Promise((resolve, reject) => {
@@ -355,7 +341,6 @@ export const placeOrder = async (orderData: OrderData): Promise<string> => {
       .then(async () => {
         try {
           isProcessingOrder = true;
-          console.log('Starting order processing...');
 
           // Add a small delay to ensure sequential processing
           await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
@@ -366,7 +351,6 @@ export const placeOrder = async (orderData: OrderData): Promise<string> => {
           reject(error);
         } finally {
           isProcessingOrder = false;
-          console.log('Order processing completed');
         }
       })
       .catch((error) => {
@@ -378,7 +362,6 @@ export const placeOrder = async (orderData: OrderData): Promise<string> => {
 
 // Internal order processing function - ATOMIC TRANSACTION to prevent stock overselling
 const processOrderInternal = async (orderData: OrderData): Promise<string> => {
-  console.log('🔒 Processing order with atomic transaction:', orderData);
 
   const today = new Date();
   const dateKey = getDateKey(today);
@@ -391,14 +374,11 @@ const processOrderInternal = async (orderData: OrderData): Promise<string> => {
   if (isLegacyDate) {
     ordersCollectionRef = collection(db, 'orders');
     collectionName = 'orders (legacy)';
-    console.log('Using legacy orders collection for:', dateKey);
   } else {
     ordersCollectionRef = getOrdersCol(today);
     collectionName = `orders/${dateKey}/items`;
-    console.log('Using date-based subcollection:', collectionName);
   }
 
-  console.log('Collection name:', collectionName);
 
   // Get current bill counter info
   const day = today.getDate().toString().padStart(2, '0');
@@ -429,14 +409,12 @@ const processOrderInternal = async (orderData: OrderData): Promise<string> => {
 
   // Execute ATOMIC TRANSACTION: stock check + reservation + order creation
   const billNumber = await runTransaction(db, async (transaction) => {
-    console.log('🔍 Transaction started - checking stock availability...');
 
     // Step 1: Get and increment bill counter
     const counterDoc = await transaction.get(counterRef);
     const counter = counterDoc.exists() ? (counterDoc.data().counter || 0) + 1 : 1;
     const generatedBillNumber = `ES${day}${month}${year}-${counter.toString().padStart(3, '0')}`;
     
-    console.log('Generated bill number:', generatedBillNumber);
 
     // Step 2: Verify stock availability for ALL items (FIFO - first to check gets priority)
     const stockErrors: string[] = [];
@@ -484,11 +462,9 @@ const processOrderInternal = async (orderData: OrderData): Promise<string> => {
       throw new Error(errorMsg);
     }
 
-    console.log('✅ All items have sufficient stock - proceeding with reservation...');
 
     // Step 3: Reserve stock by decrementing (atomic operation within transaction)
     for (const { vegRef, availStockRef, itemId, quantity, itemName } of stockRefs) {
-      console.log(`📦 Reserving ${quantity}kg of ${itemName} (ID: ${itemId})`);
       
       transaction.update(vegRef, {
         stockKg: increment(-quantity),
@@ -524,18 +500,15 @@ const processOrderInternal = async (orderData: OrderData): Promise<string> => {
       lastUpdated: serverTimestamp()
     }, { merge: true });
 
-    console.log(`✅ Transaction prepared - all operations will commit atomically`);
     return generatedBillNumber;
   });
 
-  console.log(`✅ ATOMIC TRANSACTION SUCCESSFUL - Order ${billNumber} created with stock reserved`);
   return billNumber;
 };
 
 // Async stock update function (runs in background) - now supports date-based collections
 const updateStockAsync = async (orderData: OrderData, billNumber: string, orderDate?: Date) => {
   try {
-    console.log('Updating stock asynchronously for order:', billNumber);
     const stockBatch = writeBatch(db);
     let stockUpdateCount = 0;
 
@@ -544,16 +517,13 @@ const updateStockAsync = async (orderData: OrderData, billNumber: string, orderD
     const dateKey = getDateKey(targetDate);
 
     for (const item of orderData.items) {
-      console.log(`🔄 Processing stock for item: ${item.id} (${item.name}), quantity: ${item.quantity} on ${dateKey}`);
 
       try {
         // Update vegetables collection (always date-based now)
         const vegRef = doc(db, 'vegetables', dateKey, 'items', item.id);
-        console.log(`📍 Looking for vegetable at path: vegetables/${dateKey}/items/${item.id}`);
         const vegDoc = await getDoc(vegRef);
 
         if (vegDoc.exists()) {
-          console.log(`✅ Updating vegetable ${item.id} stock using increment(-${item.quantity}) on ${dateKey}`);
 
           stockBatch.update(vegRef, {
             stockKg: increment(-item.quantity),
@@ -566,11 +536,9 @@ const updateStockAsync = async (orderData: OrderData, billNumber: string, orderD
 
         // Update available stock (always date-based now)
         const availableStockRef = doc(db, 'availableStock', dateKey, 'items', item.id);
-        console.log(`📍 Looking for available stock at path: availableStock/${dateKey}/items/${item.id}`);
         const availableStockDoc = await getDoc(availableStockRef);
 
         if (availableStockDoc.exists()) {
-          console.log(`✅ Updating available stock ${item.id} using increment(-${item.quantity}) on ${dateKey}`);
 
           stockBatch.update(availableStockRef, {
             availableStockKg: increment(-item.quantity),
@@ -589,9 +557,7 @@ const updateStockAsync = async (orderData: OrderData, billNumber: string, orderD
 
     // Commit stock updates if we have any
     if (stockUpdateCount > 0) {
-      console.log(`Committing ${stockUpdateCount} stock updates for order ${billNumber}...`);
       await stockBatch.commit();
-      console.log(`✅ Stock updates completed for order ${billNumber}`);
     }
 
   } catch (stockError) {
@@ -626,23 +592,9 @@ export const subscribeToTodayOrders = (
         const orderData = docSnapshot.data();
         const createdAt = orderData.createdAt?.toDate ? orderData.createdAt.toDate() : (orderData.createdAt || new Date());
 
-        console.log(`🔍 Processing legacy order (TODAY) ${docSnapshot.id}:`, {
-          billNumber: orderData.billNumber,
-          orderId: orderData.orderId,
-          hasItems: Array.isArray(orderData.items),
-          itemsLength: orderData.items?.length || 0,
-          itemsSample: orderData.items?.[0] || null,
-          allFields: Object.keys(orderData || {}).slice(0, 10)
-        });
 
         const items: BillItem[] = Array.isArray(orderData.items)
           ? orderData.items.map((it: any, index: number) => {
-            console.log(`  Today Item ${index + 1}:`, {
-              originalItem: it,
-              id: it.id || it.vegetableId,
-              quantity: it.quantity || it.quantityKg,
-              subtotal: it.subtotal
-            });
 
             // Try multiple possible field combinations for legacy compatibility
             const vegetableId = it.id || it.vegetableId || it.product_id || it.productId || `unknown-${index}`;
@@ -657,7 +609,6 @@ export const subscribeToTodayOrders = (
           })
           : [];
 
-        console.log(`📦 Legacy order (TODAY) ${docSnapshot.id} processed with ${items.length} items`);
         if (items.length === 0 && orderData.items) {
           console.warn(`⚠️ No items processed for order ${docSnapshot.id}, original items:`, orderData.items);
         }
@@ -686,7 +637,6 @@ export const subscribeToTodayOrders = (
   const q = query(ordersCollectionRef, orderBy('createdAt', 'desc'));
 
   return onSnapshot(q, (snapshot) => {
-    console.log(`📦 Today's orders loaded from: orders/${getDateKey(today)}/items - Count: ${snapshot.size}`);
     const bills: Bill[] = snapshot.docs.map((docSnapshot) => {
       const orderData = docSnapshot.data();
       const createdAt = orderData.createdAt?.toDate ? orderData.createdAt.toDate() : (orderData.createdAt || new Date());
@@ -749,23 +699,9 @@ export const subscribeToDateOrders = (
         const orderData = docSnapshot.data();
         const createdAt = orderData.createdAt?.toDate ? orderData.createdAt.toDate() : (orderData.createdAt || new Date());
 
-        console.log(`🔍 Processing legacy order (DATE) ${docSnapshot.id}:`, {
-          billNumber: orderData.billNumber,
-          orderId: orderData.orderId,
-          hasItems: Array.isArray(orderData.items),
-          itemsLength: orderData.items?.length || 0,
-          itemsSample: orderData.items?.[0] || null,
-          allFields: Object.keys(orderData || {}).slice(0, 10)
-        });
 
         const items: BillItem[] = Array.isArray(orderData.items)
           ? orderData.items.map((it: any, index: number) => {
-            console.log(`  Date Item ${index + 1}:`, {
-              originalItem: it,
-              id: it.id || it.vegetableId,
-              quantity: it.quantity || it.quantityKg,
-              subtotal: it.subtotal
-            });
 
             // Try multiple possible field combinations for legacy compatibility
             const vegetableId = it.id || it.vegetableId || it.product_id || it.productId || `unknown-${index}`;
@@ -780,7 +716,6 @@ export const subscribeToDateOrders = (
           })
           : [];
 
-        console.log(`📦 Legacy order (DATE) ${docSnapshot.id} processed with ${items.length} items`);
         if (items.length === 0 && orderData.items) {
           console.warn(`⚠️ No items processed for order ${docSnapshot.id}, original items:`, orderData.items);
         }
@@ -809,7 +744,6 @@ export const subscribeToDateOrders = (
   const q = query(ordersCollectionRef, orderBy('createdAt', 'desc'));
 
   return onSnapshot(q, (snapshot) => {
-    console.log(`📦 Date orders loaded from: orders/${getDateKey(date)}/items - Count: ${snapshot.size}`);
     const bills: Bill[] = snapshot.docs.map((docSnapshot) => {
       const orderData = docSnapshot.data();
       const createdAt = orderData.createdAt?.toDate ? orderData.createdAt.toDate() : (orderData.createdAt || new Date());
@@ -871,7 +805,6 @@ export async function findOrderByOrderId(orderId: string): Promise<{ docId: stri
       };
     }
   } catch (error) {
-    console.log(`Order ${orderId} not found in legacy orders collection`);
   }
 
   // Then try searching in date-based collections from the last 30 days (excluding Sept 24-25)
@@ -902,7 +835,6 @@ export async function findOrderByOrderId(orderId: string): Promise<{ docId: stri
       }
     } catch (error) {
       // Document might not exist for this date, continue searching
-      console.log(`Document ${orderId} in ${collectionName} not found, continuing search...`);
     }
   }
 
@@ -921,7 +853,6 @@ export async function updateOrderStatus(
 ): Promise<boolean> {
   try {
     const dateOverrideInfo = targetDateOverride ? ` (using selected date: ${getDateKey(targetDateOverride)})` : '';
-    console.log(`Updating order status: ${orderId} to ${status} by ${employeeId}${dateOverrideInfo}`);
 
     let targetDate: Date | null = targetDateOverride || null;
 
@@ -955,7 +886,6 @@ export async function updateOrderStatus(
       collectionInfo = `orders/${dateKey}/items`;
     }
 
-    console.log(`Looking for order in: ${collectionInfo}`);
 
     // Check if order exists
     const orderDoc = await getDoc(orderDocRef);
@@ -964,38 +894,28 @@ export async function updateOrderStatus(
 
       // For debugging: try to find the order in other places
       if (isLegacyDate) {
-        console.log(`🔍 Searching for legacy order ${orderId} across all possible locations...`);
 
         // Try searching by billNumber field instead of document ID
-        console.log(`🔍 Searching legacy orders by billNumber field...`);
         const legacyOrdersCol = collection(db, 'orders');
         const billNumberQuery = query(legacyOrdersCol, where('billNumber', '==', orderId));
         const billNumberSnapshot = await getDocs(billNumberQuery);
 
         if (!billNumberSnapshot.empty) {
-          console.log(`✅ Found order by billNumber: ${orderId}`);
           const foundDoc = billNumberSnapshot.docs[0];
-          console.log(`Document ID: ${foundDoc.id}, billNumber: ${(foundDoc.data() as any)?.billNumber}`);
 
           // Update the orderDocRef to use the correct document ID
           orderDocRef = doc(db, 'orders', foundDoc.id);
-          console.log(`Updated orderDocRef to use document ID: ${foundDoc.id}`);
         } else {
           // Also try searching by orderId field
-          console.log(`🔍 Searching legacy orders by orderId field...`);
           const orderIdQuery = query(legacyOrdersCol, where('orderId', '==', orderId));
           const orderIdSnapshot = await getDocs(orderIdQuery);
 
           if (!orderIdSnapshot.empty) {
-            console.log(`✅ Found order by orderId: ${orderId}`);
             const foundDoc = orderIdSnapshot.docs[0];
-            console.log(`Document ID: ${foundDoc.id}, orderId: ${(foundDoc.data() as any)?.orderId}`);
 
             // Update the orderDocRef to use the correct document ID
             orderDocRef = doc(db, 'orders', foundDoc.id);
-            console.log(`Updated orderDocRef to use document ID: ${foundDoc.id}`);
           } else {
-            console.log(`❌ Order ${orderId} not found anywhere in legacy collection`);
             return false;
           }
         }
@@ -1003,10 +923,8 @@ export async function updateOrderStatus(
         // Try to get the document again with the updated reference
         const retryOrderDoc = await getDoc(orderDocRef);
         if (!retryOrderDoc.exists()) {
-          console.log(`❌ Still can't find order after document ID correction`);
           return false;
         }
-        console.log(`✅ Found order after document ID correction`);
       } else {
         return false;
       }
@@ -1015,22 +933,18 @@ export async function updateOrderStatus(
     // Get the existing order data to understand its structure
     const existingData = orderDoc.data();
     const currentStatus = (existingData as any)?.status || 'unknown';
-    console.log(`Found order ${orderId} in ${collectionInfo}, current status: ${currentStatus}`);
 
     // Update the order status (different structure for legacy vs new orders)
     if (isLegacyDate) {
       // Legacy orders: simpler update structure
-      console.log(`Updating legacy order ${orderId} with simplified structure`);
       try {
         await updateDoc(orderDocRef, {
           status,
           updatedAt: serverTimestamp(),
           employeeId, // Add employeeId directly for legacy orders
         });
-        console.log(`✅ Successfully updated legacy order ${orderId} status to ${status}`);
       } catch (updateError) {
         console.error(`❌ Failed to update legacy order ${orderId}:`, updateError);
-        console.log(`Trying alternative update structure for legacy order...`);
 
         // Try alternative update - maybe legacy orders have different field names
         try {
@@ -1038,7 +952,6 @@ export async function updateOrderStatus(
             status,
             updatedAt: serverTimestamp(),
           });
-          console.log(`✅ Successfully updated legacy order ${orderId} with minimal structure`);
         } catch (altUpdateError) {
           console.error(`❌ Alternative update also failed for ${orderId}:`, altUpdateError);
           throw altUpdateError;
@@ -1046,7 +959,6 @@ export async function updateOrderStatus(
       }
     } else {
       // New date-based orders: more complex structure
-      console.log(`Updating date-based order ${orderId} with full bill structure`);
       try {
         await updateDoc(orderDocRef, {
           status,
@@ -1058,14 +970,12 @@ export async function updateOrderStatus(
             updatedAt: serverTimestamp(),
           }
         });
-        console.log(`✅ Successfully updated date-based order ${orderId} status to ${status}`);
       } catch (updateError) {
         console.error(`❌ Failed to update date-based order ${orderId}:`, updateError);
         throw updateError;
       }
     }
 
-    console.log(`✅ Updated order ${orderId} status to ${status} in ${collectionInfo}`);
     return true;
 
   } catch (error) {
@@ -1077,28 +987,14 @@ export async function updateOrderStatus(
 // Debug function to inspect legacy orders structure
 export const debugLegacyOrders = async (): Promise<void> => {
   try {
-    console.log('🔍 Inspecting legacy orders collection...');
     const legacyOrdersCol = collection(db, 'orders');
     const legacyQuery = query(legacyOrdersCol, limit(5)); // Get first 5 orders
     const snapshot = await getDocs(legacyQuery);
 
     if (snapshot.empty) {
-      console.log('❌ No documents found in legacy orders collection');
     } else {
-      console.log(`✅ Found ${snapshot.docs.length} documents in legacy orders collection:`);
       snapshot.docs.forEach((doc, index) => {
         const data = doc.data();
-        console.log(`Order ${index + 1}:`, {
-          documentId: doc.id,
-          status: (data as any)?.status,
-          billNumber: (data as any)?.billNumber,
-          orderId: (data as any)?.orderId,
-          itemsType: typeof (data as any)?.items,
-          itemsIsArray: Array.isArray((data as any)?.items),
-          itemsLength: (data as any)?.items?.length || 0,
-          sampleItem: (data as any)?.items?.[0] || null,
-          availableFields: Object.keys(data || {}).slice(0, 15) // Show first 15 fields
-        });
       });
     }
   } catch (error) {
@@ -1109,7 +1005,6 @@ export const debugLegacyOrders = async (): Promise<void> => {
 // Function to fetch individual vegetable data by ID across all date collections
 export const getVegetableById = async (vegetableId: string): Promise<Vegetable | null> => {
   try {
-    console.log(`🔍 Searching for vegetable: ${vegetableId}`);
 
     // First, try legacy vegetables collection (for Sept 24-25 and other legacy data)
     try {
@@ -1117,7 +1012,6 @@ export const getVegetableById = async (vegetableId: string): Promise<Vegetable |
       const legacyVegDoc = await getDoc(legacyVegRef);
       if (legacyVegDoc.exists()) {
         const data = legacyVegDoc.data();
-        console.log(`✅ Found vegetable ${vegetableId} in legacy collection`);
         return {
           id: legacyVegDoc.id,
           name: data.name || 'Unknown',
@@ -1129,7 +1023,6 @@ export const getVegetableById = async (vegetableId: string): Promise<Vegetable |
         };
       }
     } catch (error) {
-      console.log(`Vegetable ${vegetableId} not found in legacy collection`);
     }
 
     // Search in date-based collections (last 60 days)
@@ -1147,7 +1040,6 @@ export const getVegetableById = async (vegetableId: string): Promise<Vegetable |
 
         if (dateBasedVegDoc.exists()) {
           const data = dateBasedVegDoc.data();
-          console.log(`✅ Found vegetable ${vegetableId} in date collection: ${dateKey}`);
           return {
             id: dateBasedVegDoc.id,
             name: data.name || 'Unknown',
@@ -1164,7 +1056,6 @@ export const getVegetableById = async (vegetableId: string): Promise<Vegetable |
       }
     }
 
-    console.log(`❌ Vegetable ${vegetableId} not found in any collection`);
     return null;
   } catch (error) {
     console.error(`Error searching for vegetable ${vegetableId}:`, error);
@@ -1205,7 +1096,6 @@ export const updateMultipleOrderStatuses = async (
   targetDateOverride?: Date | null // Optional date override for UI date selection
 ): Promise<void> => {
   try {
-    console.log(`Batch updating ${updates.length} order statuses...`);
 
     const batch = writeBatch(db);
 
@@ -1235,7 +1125,6 @@ export const updateMultipleOrderStatuses = async (
       // Add to batch (different structure for legacy vs new orders)
       if (isLegacyDate) {
         // Legacy orders: simpler update structure
-        console.log(`Batch updating legacy order ${billNumber} with simplified structure`);
         batch.update(orderDocRef, {
           status: status,
           updatedAt: serverTimestamp(),
@@ -1243,7 +1132,6 @@ export const updateMultipleOrderStatuses = async (
         });
       } else {
         // New date-based orders: more complex structure
-        console.log(`Batch updating date-based order ${billNumber} with full bill structure`);
         batch.update(orderDocRef, {
           status: status,
           updatedAt: serverTimestamp(),
@@ -1259,7 +1147,6 @@ export const updateMultipleOrderStatuses = async (
 
     // Commit batch update
     await batch.commit();
-    console.log(`✅ Successfully updated ${updates.length} order statuses`);
 
   } catch (error) {
     console.error(`❌ Failed to batch update order statuses:`, error);
@@ -1397,7 +1284,6 @@ export const fetchVegetablesForDate = async (date?: Date): Promise<Vegetable[]> 
       };
     });
 
-    console.log(`Fetched ${items.length} vegetables for date ${date ? getDateKey(date) : 'current'}`);
     return items;
   } catch (error) {
     console.error('Error fetching vegetables for date:', error);
@@ -1415,7 +1301,6 @@ export const updateBill = async (
   targetDate?: Date
 ): Promise<void> => {
   try {
-    console.log(`🔄 Updating bill ${billId} with updates:`, updates);
 
     let targetBillDate: Date;
 
@@ -1451,7 +1336,6 @@ export const updateBill = async (
       collectionInfo = `orders/${dateKey}/items`;
     }
 
-    console.log(`📍 Updating bill in: ${collectionInfo}`);
 
     // Check if bill exists
     const billDoc = await getDoc(billDocRef);
@@ -1460,27 +1344,21 @@ export const updateBill = async (
 
       // For legacy bills, try to find by billNumber or orderId field
       if (isLegacyDate) {
-        console.log(`🔍 Searching for legacy bill ${billId} by billNumber field...`);
         const legacyOrdersCol = collection(db, 'orders');
         const billNumberQuery = query(legacyOrdersCol, where('billNumber', '==', billId));
         const billNumberSnapshot = await getDocs(billNumberQuery);
 
         if (!billNumberSnapshot.empty) {
-          console.log(`✅ Found bill by billNumber: ${billId}`);
           const foundDoc = billNumberSnapshot.docs[0];
           billDocRef = doc(db, 'orders', foundDoc.id);
-          console.log(`Updated billDocRef to use document ID: ${foundDoc.id}`);
         } else {
           // Also try searching by orderId field
-          console.log(`🔍 Searching legacy bills by orderId field...`);
           const orderIdQuery = query(legacyOrdersCol, where('orderId', '==', billId));
           const orderIdSnapshot = await getDocs(orderIdQuery);
 
           if (!orderIdSnapshot.empty) {
-            console.log(`✅ Found bill by orderId: ${billId}`);
             const foundDoc = orderIdSnapshot.docs[0];
             billDocRef = doc(db, 'orders', foundDoc.id);
-            console.log(`Updated billDocRef to use document ID: ${foundDoc.id}`);
           } else {
             throw new Error(`Bill ${billId} not found in ${collectionInfo}`);
           }
@@ -1532,7 +1410,6 @@ export const updateBill = async (
     // Perform the update
     await updateDoc(billDocRef, updateData);
 
-    console.log(`✅ Successfully updated bill ${billId} in ${collectionInfo}`);
 
   } catch (error) {
     console.error(`❌ Failed to update bill ${billId}:`, error);
@@ -1552,13 +1429,11 @@ export const fetchUserOrdersByDate = async (customerId: string, date: Date): Pro
     return [];
   }
 
-  console.log(`🔍 Fetching orders for customer: ${customerId} on ${date.toDateString()}`);
   const allOrders: Bill[] = [];
   const vegetableCache = new Map<string, Vegetable>();
 
   try {
     const dateKey = getDateKey(date);
-    console.log(`📅 Searching orders for date: ${dateKey}`);
 
     // Search in date-based collection for the specific date
     try {
@@ -1622,7 +1497,6 @@ export const fetchUserOrdersByDate = async (customerId: string, date: Date): Pro
         });
       }
     } catch (error: any) {
-      console.log(`⚠️ No date-based orders found for ${dateKey}:`, error.message);
     }
 
     // Also check legacy 'orders' collection for the same date
@@ -1698,7 +1572,6 @@ export const fetchUserOrdersByDate = async (customerId: string, date: Date): Pro
         });
       }
     } catch (error: any) {
-      console.log('⚠️ Legacy orders collection not accessible or empty');
     }
 
     // Enrich orders with vegetable names if missing
@@ -1713,7 +1586,6 @@ export const fetchUserOrdersByDate = async (customerId: string, date: Date): Pro
 
     // Fetch missing vegetable names
     if (missingVegetableIds.size > 0) {
-      console.log(`📦 Fetching ${missingVegetableIds.size} vegetable details...`);
       const vegetablePromises = Array.from(missingVegetableIds).map(async (vegId) => {
         try {
           const vegetable = await getVegetableById(vegId);
@@ -1759,15 +1631,9 @@ export const fetchUserOrdersByDate = async (customerId: string, date: Date): Pro
       return dateB - dateA;
     });
 
-    console.log(`✅ Found ${filteredOrders.length} completed orders (out of ${allOrders.length} total) for customer ${customerId}`);
 
     if (filteredOrders.length === 0 && allOrders.length > 0) {
-      console.log(`⚠️ Found ${allOrders.length} orders, but none with status: packed, delivered, or bill sent`);
     } else if (allOrders.length === 0) {
-      console.log(`⚠️ No orders found. Make sure:
-        1. Orders exist in Firebase with customerId: ${customerId}
-        2. Firebase rules allow reading orders for this user
-        3. The field name is 'customerId' (not 'userId')`);
     }
 
     return filteredOrders;

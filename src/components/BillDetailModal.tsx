@@ -141,7 +141,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
     const originalQty = originalItem?.quantityKg || 0;
     const effectiveStock = dbStock + originalQty;
     
-    console.log('[getEffectiveAvailableStock] vegetableId:', vegetableId, 'dbStock:', dbStock, 'originalQty:', originalQty, 'effectiveStock:', effectiveStock);
     
     return effectiveStock;
   };
@@ -358,9 +357,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
     if (!current) return;
     const veg = combinedVegetableMap.get(current.vegetableId);
     
-    console.log('[handleQuantityChange] START - index:', index, 'newQuantity:', newQuantity);
-    console.log('[handleQuantityChange] Current item:', current);
-    console.log('[handleQuantityChange] Vegetable from map:', veg);
     
     // For COUNT items, ensure integer values; for KG items, allow decimals
     let clamped: number;
@@ -370,32 +366,26 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
       clamped = Math.max(0, Math.round(newQuantity * 100) / 100); // Decimal for kg
     }
     
-    console.log('[handleQuantityChange] Clamped quantity:', clamped);
     
     // Check available stock - strict validation against current DB stock
     const availableStock = availableStockMap.get(current.vegetableId) || 0;
-    console.log('[handleQuantityChange] Available stock from DB:', availableStock);
     
     // Get the ORIGINAL quantity from the bill (not the edited quantity)
     // This is crucial because the DB stock already has the original order deducted
     const originalItem = bill?.items.find(item => item.vegetableId === current.vegetableId);
     const originalQty = originalItem?.quantityKg || 0;
-    console.log('[handleQuantityChange] Original bill item quantity:', originalQty);
     
     // Calculate quantity used by OTHER items in the edited bill with the same vegetableId (excluding current item)
     const otherItemsQty = editedItems
       .filter((_, idx) => idx !== index && _.vegetableId === current.vegetableId)
       .reduce((sum, item) => sum + item.quantityKg, 0);
-    console.log('[handleQuantityChange] Other edited items qty (same vegetableId):', otherItemsQty);
     
     // Max allowed = available in DB + original bill quantity - what other edited items are using
     // The original quantity was already deducted from stock when order was placed,
     // so we add it back to get the true available amount for this bill
     const maxAllowed = availableStock + originalQty - otherItemsQty;
-    console.log('[handleQuantityChange] Max allowed calculation:', availableStock, '+', originalQty, '-', otherItemsQty, '=', maxAllowed);
     
     if (clamped > maxAllowed) {
-      console.log('[handleQuantityChange] STOCK EXCEEDED! Requested:', clamped, 'Max allowed:', maxAllowed);
       setStockAlert({
         show: true,
         itemName: veg?.name || `Item ${current.vegetableId}`,
@@ -404,14 +394,12 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
       });
       setTimeout(() => setStockAlert(null), 5000);
       clamped = Math.max(0, maxAllowed);
-      console.log('[handleQuantityChange] Adjusted clamped to:', clamped);
     }
     
     const pricePerKg = veg ? veg.pricePerKg : (current.quantityKg ? current.subtotal / current.quantityKg : 0);
     const newSubtotal = Math.round(clamped * pricePerKg * 100) / 100;
     const copy = [...editedItems];
     copy[index] = { ...copy[index], quantityKg: clamped, subtotal: newSubtotal, pricePerKg };
-    console.log('[handleQuantityChange] Final updated item:', copy[index]);
     setEditedItems(copy);
   };
 
@@ -419,37 +407,29 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
     const veg = combinedVegetableMap.get(vegetableId);
     if (!veg || quantity <= 0) return;
     
-    console.log('[handleAddVegetable] START - vegetableId:', vegetableId, 'quantity:', quantity);
-    console.log('[handleAddVegetable] Vegetable:', veg);
     
     // Ensure correct quantity format based on unit type
     let adjustedQty = quantity;
     if (veg.unitType === 'COUNT') {
       adjustedQty = Math.floor(quantity); // Integer only for count
     }
-    console.log('[handleAddVegetable] Adjusted quantity:', adjustedQty);
     
     // Check available stock - strict validation against current DB stock
     const availableStock = availableStockMap.get(vegetableId) || 0;
-    console.log('[handleAddVegetable] Available stock from DB:', availableStock);
     
     // Get the ORIGINAL quantity from the bill for this vegetableId
     const originalItem = bill?.items.find(item => item.vegetableId === vegetableId);
     const originalQty = originalItem?.quantityKg || 0;
-    console.log('[handleAddVegetable] Original bill item quantity:', originalQty);
     
     // Calculate quantity currently in edited items for this vegetableId
     const currentEditedQty = editedItems
       .filter(it => it.vegetableId === vegetableId)
       .reduce((sum, item) => sum + item.quantityKg, 0);
-    console.log('[handleAddVegetable] Current edited items qty:', currentEditedQty);
     
     // Max allowed = available in DB + original bill quantity - what's currently in edited items
     const maxAllowed = availableStock + originalQty - currentEditedQty;
-    console.log('[handleAddVegetable] Max allowed calculation:', availableStock, '+', originalQty, '-', currentEditedQty, '=', maxAllowed);
     
     if (adjustedQty > maxAllowed) {
-      console.log('[handleAddVegetable] STOCK EXCEEDED! Requested:', adjustedQty, 'Max allowed:', maxAllowed);
       setStockAlert({
         show: true,
         itemName: veg.name,
@@ -458,11 +438,9 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
       });
       setTimeout(() => setStockAlert(null), 5000);
       if (maxAllowed <= 0) {
-        console.log('[handleAddVegetable] No stock available, aborting add');
         return; // Don't add if no stock available
       }
       adjustedQty = maxAllowed; // Adjust to max allowed
-      console.log('[handleAddVegetable] Adjusted quantity to max allowed:', adjustedQty);
     }
     
     const idx = editedItems.findIndex(it => it.vegetableId === vegetableId);
@@ -470,11 +448,9 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
       const copy = [...editedItems];
       const newQty = copy[idx].quantityKg + adjustedQty;
       copy[idx] = { ...copy[idx], quantityKg: newQty, subtotal: newQty * veg.pricePerKg, pricePerKg: veg.pricePerKg };
-      console.log('[handleAddVegetable] Updated existing item:', copy[idx]);
       setEditedItems(copy);
     } else {
       const ni: BillItem = { vegetableId, quantityKg: adjustedQty, subtotal: adjustedQty * veg.pricePerKg, pricePerKg: veg.pricePerKg };
-      console.log('[handleAddVegetable] Adding new item:', ni);
       setEditedItems(prev => [...prev, ni]);
     }
   };
@@ -534,9 +510,7 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
 
       if (stockUpdateCount > 0) {
         await stockBatch.commit();
-        console.log('Stock updates committed:', stockUpdateCount);
       } else {
-        console.log('No stock updates required.');
       }
     } catch (err) {
       console.error('Stock update failed', err);
@@ -550,7 +524,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
       await updateStockForQuantityChanges();
       await onUpdateBill(bill.id, { items: editedItems, total: calculatedTotal });
       setHasUnsavedChanges(false);
-      console.log('Bill updated successfully');
     } catch (err) {
       console.error('Save failed', err);
       alert('Failed to save changes. Please try again.');
@@ -935,7 +908,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
   const copyUpiId = async (upiId: string) => {
     try {
       await navigator.clipboard.writeText(upiId);
-      console.log('UPI ID copied to clipboard:', upiId);
     } catch (err) {
       console.error('Failed to copy UPI ID:', err);
     }
@@ -1034,7 +1006,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
           }
         });
         downloadUrl = await getDownloadURL(storageRef);
-        console.log('✅ PDF uploaded to Firebase Storage:', downloadUrl);
       } catch (uploadErr) {
         console.error('⚠️ PDF upload failed (continuing with share):', uploadErr);
         downloadUrl = 'Kindly download your bill from the link.';
@@ -1053,7 +1024,6 @@ const BillDetailModal: React.FC<BillDetailModalProps> = ({
             updates.lastSharedBy = currentUser.id;
           }
           await onUpdateBill(bill.id, updates);
-          console.log('✅ Bill metadata updated:', updates);
         } catch (updateErr) {
           console.error('Failed to persist PDF metadata', updateErr);
         }

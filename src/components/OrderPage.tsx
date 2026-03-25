@@ -85,12 +85,10 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
   }, [vegetables, searchTerm, category, availableStock]);
 
   const updateCart = (vegId: string, quantity: number) => {
-    console.log(`Updating cart for ${vegId} with quantity ${quantity}`);
     setCart(prev => {
       const newCart = new Map(prev);
       const vegetable = vegetableMap.get(vegId);
       if (!vegetable) {
-        console.log(`Vegetable not found for ${vegId}`);
         return prev;
       }
 
@@ -99,14 +97,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
       const maxStock = getOrderableStock(availableStockAmount, vegetable.totalStockKg, vegetable.unitType);
       // Clamp quantity between 0 and orderable stock
       const clampedQuantity = Math.max(0, Math.min(quantity, maxStock));
-      console.log(`Clamped quantity: ${clampedQuantity} (original: ${quantity}, max: ${maxStock}, available: ${availableStockAmount}, total: ${vegetable.totalStockKg})`);
 
       if (clampedQuantity > 0) {
         newCart.set(vegId, parseFloat(clampedQuantity.toFixed(2)));
-        console.log(`Added to cart: ${vegId} = ${clampedQuantity}`);
       } else {
         newCart.delete(vegId);
-        console.log(`Removed from cart: ${vegId}`);
       }
       return newCart;
     });
@@ -154,13 +149,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
     // COMMENTED OUT - Payment screenshot functionality preserved for future use
     // const paymentScreenshotBase64 = await fileToBase64(screenshot);
 
-    console.log('👤 Creating order for user:', {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      department: (user as any).department,
-      email: (user as any).email
-    });
 
     const createdBill = await addBill({
       items: cartItems.map(({ name, pricePerKg, stockKg, unitType, ...item }) => item),
@@ -174,7 +162,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
       // paymentScreenshot: paymentScreenshotBase64,
     });
 
-    console.log('✅ Order created successfully:', createdBill);
     setFinalBill(createdBill);
     setStage('success');
     setCart(new Map());
@@ -189,7 +176,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
 
     try {
       // Step 1: Real-time stock validation before order placement
-      console.log('🔍 Validating stock availability...');
       const errors = new Map<string, { requested: number; available: number }>();
       let hasStockIssues = false;
 
@@ -217,10 +203,8 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
         errors.forEach((error, vegId) => {
           if (error.available > 0) {
             adjustedCart.set(vegId, error.available);
-            console.log(`📉 Auto-adjusted ${vegId} from ${error.requested}kg to ${error.available}kg (orderable)`);
           } else {
             adjustedCart.delete(vegId);
-            console.log(`🚫 Removed ${vegId} from cart (out of orderable stock)`);
           }
         });
         setCart(adjustedCart);
@@ -230,7 +214,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
         return;
       }
 
-      console.log('✅ Stock validation passed');
 
       // Add a small delay for better UX and animation visibility
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -278,7 +261,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
         onUpdateUser(updatedUser);
       }
 
-      console.log('Profile updated successfully:', profile);
     } catch (error) {
       console.error('Error updating profile:', error);
       // You can add toast notification here for error handling
@@ -294,7 +276,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ user, vegetables, availableStock,
     };
 
     // Handle password change logic here
-    console.log('Password change requested');
     // You can add API calls or validation here with uppercasePasswords
   };
 

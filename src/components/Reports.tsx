@@ -35,7 +35,6 @@ const Reports: React.FC = () => {
         const sel = new Date(reportDate);
         const dateStr = reportDate; // Already in YYYY-MM-DD format
 
-        console.log(`📊 Fetching orders for Reports on: ${reportDate}`);
 
         // Check if this is September 24th or 25th, 2025 - use legacy collection only
         const isLegacyDate = dateStr === '2025-09-24' || dateStr === '2025-09-25';
@@ -52,7 +51,6 @@ const Reports: React.FC = () => {
         if (isLegacyDate) {
           // Fetch only from legacy orders collection for Sept 24-25
           try {
-            console.log(`📊 Fetching from legacy collection for: ${reportDate}`);
             const legacyOrdersCol = collection(db, 'orders');
             const legacyQuery = fsQuery(
               legacyOrdersCol,
@@ -62,7 +60,6 @@ const Reports: React.FC = () => {
             );
 
             const legacySnap = await getDocs(legacyQuery);
-            console.log(`📦 Found ${legacySnap.size} legacy orders for ${reportDate}`);
 
             const legacyOrders = legacySnap.docs.map((docSnap) => {
               const orderData = docSnap.data();
@@ -91,11 +88,9 @@ const Reports: React.FC = () => {
         } else {
           // Fetch only from date-based collection for all other dates
           try {
-            console.log(`📊 Fetching from date-based collection for: ${reportDate}`);
             const ordersCollectionRef = getOrdersCol(sel);
 
             const ordersSnap = await getDocs(ordersCollectionRef);
-            console.log(`📦 Found ${ordersSnap.size} date-based orders for ${reportDate}`);
 
             const dateBasedOrders = ordersSnap.docs.map((docSnap) => {
               const orderData = docSnap.data();
@@ -126,12 +121,6 @@ const Reports: React.FC = () => {
         // Sort by createdAt descending (most recent first)
         allOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-        console.log(`📊 Reports Summary for ${reportDate}:`, {
-          isLegacyDate,
-          totalOrders: allOrders.length,
-          totalRevenue: allOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-          collectionType: isLegacyDate ? 'Legacy (orders/)' : 'Date-based (orders/YYYY-MM-DD/items/)'
-        });
 
         setOrders(allOrders);
       } catch (e) {
@@ -503,7 +492,6 @@ const Reports: React.FC = () => {
         document.body.removeChild(link);
       }
 
-      console.log(`✅ CSV report generated for ${reportDate} with ${orders.length} orders`);
 
     } catch (error) {
       console.error('Failed to generate CSV:', error);

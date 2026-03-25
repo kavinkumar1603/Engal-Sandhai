@@ -62,7 +62,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ error, clearError, currentUser, o
       } else {
         // Fallback to original login logic if no callback provided
         const userCredential = await loginWithEmployeeID(employeeID, phone);
-        console.log('Login successful:', userCredential.user);
       }
     } catch (err: any) {
       console.error('Login error:', err);

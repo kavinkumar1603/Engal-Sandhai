@@ -54,9 +54,7 @@ const CartContent: React.FC<Omit<CartViewProps, "isOpen">> = ({
       setQueueMessage("Processing your order...");
 
       // Call the parent's onPlaceOrder function and wait for it to complete
-      console.log('🔥 CartView: Calling onPlaceOrder...');
       await onPlaceOrder();
-      console.log('✅ CartView: Order placement completed');
 
     } catch (error) {
       console.error('Error placing order:', error);
@@ -203,7 +201,6 @@ const CartContent: React.FC<Omit<CartViewProps, "isOpen">> = ({
                 <div className="col-span-2 text-center flex justify-center">
                   <button
                     onClick={() => {
-                      console.log(`Remove button clicked for ${item.vegetableId}`);
                       onUpdateCart(item.vegetableId, 0);
                     }}
                     className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200 flex items-center justify-center"

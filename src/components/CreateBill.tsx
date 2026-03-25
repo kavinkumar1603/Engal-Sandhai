@@ -247,7 +247,6 @@ const CreateBill: React.FC<CreateBillProps> = ({ user, vegetables, bills, addBil
                             setIsFetchingCustomer(true);
                             const user = await getUserFromDb(id);
                             setIsFetchingCustomer(false);
-                            console.log('Fetched user from DB:', user, Object.keys(user || {}));
                             let name = '';
                             if (user) {
                               if (typeof user['employee_name'] === 'string') {

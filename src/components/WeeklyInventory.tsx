@@ -57,7 +57,6 @@ const WeeklyInventory: React.FC<WeeklyInventoryProps> = ({ vegetables, bills, us
         const startDate = weekDates[0];
         const endDate = weekDates[6];
 
-        console.log(`Loading weekly data from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
 
         // Fetch both bills and vegetables concurrently
         const [bills, weekVegetables] = await Promise.all([
@@ -68,7 +67,6 @@ const WeeklyInventory: React.FC<WeeklyInventoryProps> = ({ vegetables, bills, us
         setWeeklyBills(bills);
         setWeeklyVegetables(weekVegetables);
 
-        console.log(`Loaded ${bills.length} bills and ${weekVegetables.length} vegetables for the week`);
       } catch (error) {
         console.error('Error loading weekly data:', error);
         setWeeklyBills([]);
@@ -88,7 +86,6 @@ const WeeklyInventory: React.FC<WeeklyInventoryProps> = ({ vegetables, bills, us
       const startDate = weekDates[0];
       const endDate = weekDates[6];
 
-      console.log('🔄 Manual refresh: Reloading weekly stock data...');
 
       // Fetch fresh data from database
       const [bills, weekVegetables] = await Promise.all([
@@ -100,7 +97,6 @@ const WeeklyInventory: React.FC<WeeklyInventoryProps> = ({ vegetables, bills, us
       setWeeklyVegetables(weekVegetables);
       setLastRefreshTime(new Date());
 
-      console.log(`✅ Refreshed: ${bills.length} bills and ${weekVegetables.length} vegetables loaded`);
     } catch (error) {
       console.error('Error refreshing weekly data:', error);
     } finally {

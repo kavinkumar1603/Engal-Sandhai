@@ -68,7 +68,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
   // Function to refresh bill data from database
   const refreshBillData = async (billId: string) => {
     try {
-      console.log(`🔄 Refreshing bill data for: ${billId}`);
       
       // Find the original bill to get its date
       const originalBill = bills.find(b => b.id === billId);
@@ -94,19 +93,10 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
         collectionPath = `orders/${dateKey}/items/${billId}`;
       }
       
-      console.log(`📍 Fetching bill from: ${collectionPath}`);
       const billDoc = await getDoc(billRef);
       
       if (billDoc.exists()) {
         const updatedBillData = billDoc.data() as any;
-        console.log(`🔍 Refreshing bill ${billId}:`, {
-          originalItems: originalBill.items?.length || 0,
-          updatedItems: updatedBillData.items?.length || 0,
-          originalTotal: originalBill.total,
-          updatedTotal: updatedBillData.totalAmount,
-          rawItems: updatedBillData.items,
-          isLegacy: isLegacyDate
-        });
         
         // Convert database items format to BillItem format
         const convertedItems = Array.isArray(updatedBillData.items)
@@ -120,7 +110,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
             }))
           : (originalBill.items || []);
         
-        console.log(`🔄 Converted ${updatedBillData.items?.length || 0} items from database format:`, convertedItems);
         
         const updatedBill: Bill = {
           id: billDoc.id,
@@ -135,7 +124,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
           paymentScreenshot: updatedBillData.paymentScreenshot || originalBill.paymentScreenshot
         };
         
-        console.log(`✅ Bill ${billId} refreshed from database. Items: ${updatedBill.items.length}, Total: ₹${updatedBill.total}`);
         
         // Update the refreshed bills map
         setRefreshedBills(prev => new Map(prev.set(billId, updatedBill)));
@@ -144,12 +132,10 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
         
         // If not found in expected location, try alternative paths
         if (!isLegacyDate) {
-          console.log(`🔍 Trying legacy collection for bill ${billId}...`);
           const legacyBillRef = doc(db, 'orders', billId);
           const legacyBillDoc = await getDoc(legacyBillRef);
           
           if (legacyBillDoc.exists()) {
-            console.log(`✅ Found bill ${billId} in legacy collection`);
             const legacyBillData = legacyBillDoc.data() as any;
             
             const convertedItems = Array.isArray(legacyBillData.items)
@@ -187,7 +173,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
   // Function to handle bill updates from modal
   const handleBillUpdate = async (billId: string, updates: Partial<Bill>) => {
     try {
-      console.log(`📝 Handling bill update for ${billId}:`, updates);
       
       // Call the updateBill function from dbService
       await updateBill(billId, updates);
@@ -200,7 +185,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
       // Refresh the bill data to show updated amounts
       await refreshBillData(billId);
       
-      console.log(`✅ Bill ${billId} updated successfully`);
     } catch (error) {
       console.error(`❌ Error updating bill ${billId}:`, error);
       throw error; // Re-throw so the modal can handle the error
@@ -218,10 +202,8 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
 
   // Function to refresh all visible bills
   const refreshAllBills = async () => {
-    console.log('🔄 Refreshing all visible bills...');
     const visibleBills = filteredBills.slice(0, 20); // Limit to first 20 visible bills to avoid overwhelming
     await Promise.all(visibleBills.map(bill => refreshBillData(bill.id)));
-    console.log('✅ All visible bills refreshed');
   };
 
   // Fetch missing user infos for visible bills
@@ -279,7 +261,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
       // Only refresh if we have bills and don't have too many refreshed bills already
       const needsRefresh = bills.some(bill => !refreshedBills.has(bill.id));
       if (needsRefresh && refreshedBills.size < 50) { // Limit to prevent excessive refreshing
-        console.log('🔄 Auto-refreshing bills due to bills array change...');
         const recentBills = bills.slice(0, 10); // Limit to 10 most recent bills
         recentBills.forEach(bill => refreshBillData(bill.id));
       }
@@ -562,7 +543,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
                       <td className="px-6 py-4 text-sm" title={formatItems(bill.items || [], bill.bags)}>
                         {(() => {
                           const itemCount = (bill.items || []).length;
-                          console.log(`📊 Bill ${bill.id} items:`, itemCount, bill.items);
                           return `${itemCount} ${itemCount === 1 ? 'item' : 'items'}${bill.bags && bill.bags > 0 ? ` + ${bill.bags} bag${bill.bags === 1 ? '' : 's'}` : ''}`;
                         })()}
                       </td>
@@ -591,8 +571,6 @@ const Orders: React.FC<OrdersProps> = ({ bills, vegetables, initialBillId, onCle
                       <td className="px-6 py-4 text-center">
                         <button 
                             onClick={() => {
-                              console.log('🔍 Opening bill details for:', bill.id, 'Items count:', bill.items?.length || 0);
-                              console.log('📊 Bill data:', bill);
                               setViewingBill(bill);
                             }}
                             className="p-2 text-slate-500 hover:text-primary-600 rounded-full hover:bg-slate-100"
